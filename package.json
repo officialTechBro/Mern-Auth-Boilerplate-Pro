@@ -21,7 +21,6 @@
     "mongoose": "^8.19.3"
   },
   "devDependencies": {
-    "clear": "^0.1.0",
     "nodemon": "^3.1.10"
   }
 }
