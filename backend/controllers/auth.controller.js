@@ -1,6 +1,7 @@
 import User from "../models/user.model.js"
+import crypto from 'crypto'
 import { generateTokenAndSetCookies } from "../utils/generateTokens.js"
-import { sendVerificationEmail, sendWelcomeEmail } from "../mailtrap/emails.js";
+import { sendVerificationEmail, sendWelcomeEmail, sendPasswordResetEmail, sendResetSuccessEmail } from "../mailtrap/emails.js";
 
 
 export const signUpUser = async (req, res) => {
@@ -83,24 +84,106 @@ export const verifyEmail = async (req, res) => {
       })
     } catch (error) {
       console.error("verifyEmail error:", error);
-        res.status(500).json({message: "Error verifying user", error})
+      res.status(500).json({success: false, message: "Error verifying user", error})
     }
 }
 
 
-export const loginUser = (req, res) => {
+export const loginUser = async (req, res) => {
+  const {email, password} = req.body 
+  
     try {
-        res.status(200).json({message: "User registered successfully"})
+      const user = await User.findOne({email})
+      if (!user && !(await user.comparePassword(password))) {
+        return res.status(400).json({success: false, message: "Inavalid credentials"})
+      }
+
+      const token = generateTokenAndSetCookies(res, user._id)
+
+      user.lastLogin = new Date()
+
+      await user.save()
+
+      res.status(200).json({
+        success: true, 
+        message: "User logged in successfully",
+        user: {
+          ...user._doc,
+          password: undefined
+        },
+        token
+      })
     } catch (error) {
-        res.status(500).json({message: "Error logged in user", error})
+      console.error('Error logging in user', error)
+      res.status(500).json({success: false, message: "Error logged in user", error})
     }
 }
 
 
-export const logoutUser = (req, res) => {
+export const logoutUser = async (req, res) => {
     try {
-        res.status(200).json({message: "User logged out successfully"})
+        res.clearCookie("token")
+        res.status(200).json({success: true, message: "User logged out successfully"})
     } catch (error) {
-        res.status(500).json({message: "Error loging out user", error})
+        res.status(500).json({success: false, message: "Error loging out user", error})
     }
+}
+
+
+export const forgotPassword = async (req, res) => {
+    const {email} = req.body
+    try {
+      const user = await User.findOne({email})
+      if (!user) {
+        return res.status(400).json({success: false, message: "User not found"})
+      }
+      
+      // Generate reset token
+      const resetToken = crypto.randomBytes(20).toString("hex")
+      const resetTokenExpiresAt = Date.now() + 1 * 60 * 60 * 1000
+
+      user. resetPasswordToken = resetToken
+      user.resetPasswordExpiresAt = resetTokenExpiresAt
+
+      await user.save()
+
+      const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`
+
+      await sendPasswordResetEmail(user.email, resetUrl)
+
+      res.status(200).json({success: true, message: "Password reset link sent to your email"})
+    } catch (error) {
+      console.error("Error in forget password", error)
+        res.status(400).json({success: false, message: error.message})
+    }
+}
+
+
+export const resetPassword = async (req, res) => {
+  try {
+    const {token} = req.params 
+    const {password} = req.body
+
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpiresAt: {$gt: Date.now()}
+    })
+    if (!user) {
+      return res.status(400).json({success: false, message: "Invalid or expired reset token"})
+    }
+
+    // updatePassword
+    user.password = password
+    user.resetPasswordToken = undefined
+    user.resetPasswordExpiresAt = undefined
+
+    await user.save()
+
+    await sendResetSuccessEmail(user.email)
+
+    res.status(200).json({success: true, message: "Password reset successful"})
+  } catch (error) {
+    console.error("Error in resetPassword", error)
+    res.staus(400).json({success: false, message: error.message})
+  }
 }

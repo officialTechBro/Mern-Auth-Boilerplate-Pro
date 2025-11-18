@@ -1,4 +1,4 @@
-export const PASSWORD_REQUEST_TEMPLATE = `
+export const PASSWORD_RESET_REQUEST_TEMPLATE = `
     <!DOCTYPE html>
     <html lang="en">
     <head>
@@ -74,8 +74,6 @@ export const PASSWORD_REQUEST_TEMPLATE = `
         </body>
     </html>
 `
-
-
 export const VERIFY_EMAIL_TEMPLATE = `
     <!DOCTYPE html>
     <html lang="en">
@@ -151,8 +149,6 @@ export const VERIFY_EMAIL_TEMPLATE = `
     </body>
     </html>
 `
-
-
 export const PASSWORD_RESET_SUCCESSFUL_EMAIL = `
     <!DOCTYPE html>
     <html lang="en">
@@ -208,7 +204,7 @@ export const PASSWORD_RESET_SUCCESSFUL_EMAIL = `
             </div>
             <div class="content">
                 <p>Hi,</p>
-                <p>Your password was successfully changed at {{changedAt}}.</p>
+                <p>Your password was successfully changed at {changedAt}.</p>
                 <p>If you did not make this change, please reset your password immediately or contact support.</p>
                 <div class="alert">
                     If this wasn't you, please secure your account now!
