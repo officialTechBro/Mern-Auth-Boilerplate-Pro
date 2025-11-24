@@ -1,7 +1,19 @@
 import { Router } from "express";
-import { forgotPassword, loginUser, logoutUser, resetPassword, signUpUser, verifyEmail } from "../controllers/auth.controller.js";
+import { 
+    forgotPassword, 
+    loginUser, 
+    logoutUser, 
+    resetPassword, 
+    signUpUser, 
+    verifyEmail, 
+    checkAuth 
+} from "../controllers/auth.controller.js";
+import { verifyToken } from "../middleware/verifyToken.js";
+
 
 const authRoute = Router()
+
+authRoute.get('/check-auth', verifyToken, checkAuth)
 
 authRoute.post("/signup", signUpUser)
 authRoute.post("/login", loginUser)

@@ -3,7 +3,6 @@ import crypto from 'crypto'
 import { generateTokenAndSetCookies } from "../utils/generateTokens.js"
 import { sendVerificationEmail, sendWelcomeEmail, sendPasswordResetEmail, sendResetSuccessEmail } from "../mailtrap/emails.js";
 
-
 export const signUpUser = async (req, res) => {
   const { email, password, name } = req.body;
 
@@ -184,6 +183,20 @@ export const resetPassword = async (req, res) => {
     res.status(200).json({success: true, message: "Password reset successful"})
   } catch (error) {
     console.error("Error in resetPassword", error)
-    res.staus(400).json({success: false, message: error.message})
+    res.status(400).json({success: false, message: error.message})
+  }
+}
+
+export const checkAuth = async (req, res) => {
+  try {
+    const user = await User.findById(req.userId).select("-password")
+    if (!user) {
+      return res.status(404).json({success: false, message: "user not found"})
+    }
+
+    res.status(200).json({success: true, user})
+  } catch (error) {
+    console.error("Error in checkAuth", error)
+    res.status(400).json({success: false, message: error.message})
   }
 }
